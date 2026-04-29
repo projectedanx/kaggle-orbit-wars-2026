@@ -104,7 +104,7 @@ def step_single(state: dict, action: jnp.ndarray) -> tuple:
     # 5. PRODUCTION
     is_owned = planets[:, 1] >= 0
     new_ships = planets[:, 5] + jnp.where(is_owned, planets[:, 6], 0.0)
-    planets = planets.at[:, 5].set(jnp.clip(new_ships, 0, 999))
+    planets = planets.at[:, 5].set(new_ships)
 
     # 6. CHECK TERMINAL CONDITION
     p0_alive = jnp.any((planets[:, 1] == 0)) | jnp.any((fleets[0, :, 0] > 0))
