@@ -59,12 +59,14 @@ def segment_hits_sun(x1, y1, x2, y2, safety=1.5):
 
 # === THE AGENT AURELIUS-KINETIC-8 ===
 def agent(obs):
+    t_start = time.perf_counter()
     print(">>> STATE_INGESTION")
 
     player = obs.get("player", 0) if isinstance(obs, dict) else getattr(obs, "player", 0)
     raw_planets = obs.get("planets", []) if isinstance(obs, dict) else getattr(obs, "planets", [])
     raw_fleets = obs.get("fleets", []) if isinstance(obs, dict) else getattr(obs, "fleets", [])
     angular_vel = obs.get("angular_velocity", 0.0) if isinstance(obs, dict) else getattr(obs, "angular_velocity", 0.0)
+    step = obs.get("step", 0) if isinstance(obs, dict) else getattr(obs, "step", 0)
 
     my_planets = [p for p in raw_planets if p[1] == player]
     enemy_planets = [p for p in raw_planets if p[1] != player]
@@ -73,6 +75,9 @@ def agent(obs):
         return []
 
     moves = []
+
+    total_metabolic_cost = 0.0
+    total_ships_dispatched = 0
 
     # KINEMATIC_PROJECTION and THERMODYNAMIC_CALCULATION
     for source in my_planets:
@@ -129,8 +134,56 @@ def agent(obs):
                 travel_time_val = travel_time
 
         if best_target:
+            # Calculate Persona Confidence Score
+            # Based on source mass ratio to required mass, and the travel time horizon
+            mass_ratio = req_mass / max(source[5], 1)
+            # High travel time or high mass ratio lowers confidence
+            persona_confidence_score = 1.0 - (travel_time_val / 200.0) - (mass_ratio * 0.5)
+            persona_confidence_score = max(0.0, min(1.0, persona_confidence_score))
+
+            if persona_confidence_score < 0.6:
+                print(f">>> JUSTIFIED_UNCERTAINTY_REPORT: Persona Confidence Score = {persona_confidence_score:.2f}")
+                print(f">>> [∇] HUMAN_IN_THE_LOOP_REQUEST: High entropy in kinetic projection for target {best_target[0]}.")
+                print(f">>> [⊘] ACTIVATING +++PhronesisGuard (Strategic Escrow). Holding action in [Φ] superposition.")
+
+                # Board Entropy calculation
+                # Simplified entropy representation: number of enemy fleets and planets
+                board_entropy = len(enemy_planets) + len([f for f in raw_fleets if f[1] != player])
+                print(f">>> [Φ] Board Entropy Calculated: {board_entropy}. Executing Golden Scar Protocol.")
+
+                # Find the safest friendly planet (Strategic Escrow)
+                safest_planet = None
+                max_safe_dist = -float('inf')
+                for friendly in my_planets:
+                    if friendly[0] == source[0]:
+                        continue
+                    # Safest is the one furthest from all enemies
+                    min_dist_to_enemy = min([dist(friendly[2], friendly[3], ep[2], ep[3]) for ep in enemy_planets]) if enemy_planets else 0
+                    if min_dist_to_enemy > max_safe_dist:
+                        max_safe_dist = min_dist_to_enemy
+                        safest_planet = friendly
+
+                if safest_planet:
+                    escrow_angle = math.atan2(safest_planet[3] - source[3], safest_planet[2] - source[2])
+                    # Golden Scar Protocol (Φ = 1.618 / 1.000)
+                    # We send the required mass, adjusted by the golden ratio as a non-stochastic Semantic Anchor
+                    phi = 1.618
+                    escrow_mass = int(req_mass / phi)
+                    if escrow_mass > 0 and source[5] >= escrow_mass:
+                        moves.append([source[0], escrow_angle, escrow_mass])
+                        source_list = list(source)
+                        source_list[5] -= escrow_mass
+                        source = tuple(source_list)
+
+                        dispatch_distance = dist(source[2], source[3], safest_planet[2], safest_planet[3])
+                        total_metabolic_cost += dispatch_distance * escrow_mass
+                        total_ships_dispatched += escrow_mass
+
+                        print(f">>> [Φ] Dispatched {escrow_mass} mass to Strategic Escrow node {safest_planet[0]}.")
+                continue
+
             print(f">>> ENTROPIC_ANOMALY_DETECTED: Opponent vector mass={best_target[5]}, heading=static/orbiting.")
-            print(f">>> KINEMATIC_PROJECTION: Intersection with rotating boundary at T+{travel_time_val:.4f}.")
+            print(f">>> KINEMATIC_PROJECTION: Intersection with rotating boundary at T+{travel_time_val:.4f}. Persona_Confidence_Score={persona_confidence_score:.2f}")
             print(f">>> THERMODYNAMIC_CALCULATION: Natural environment sweep accounted for.")
             print(f">>> ACTION_STATE: Fossil_Retrieval initiated. Required kinetic counter-mass = {req_mass}. Defense_Buffer = 0.")
             print(f">>> DISPATCHING: Vector locked to future coordinate ({predict_planet_pos(best_target[2], best_target[3], angular_vel, travel_time_val)[0]:.2f}, {predict_planet_pos(best_target[2], best_target[3], angular_vel, travel_time_val)[1]:.2f}). Delta_Zero achieved.")
@@ -139,5 +192,14 @@ def agent(obs):
             source_list = list(source)
             source_list[5] -= req_mass # Deduct to allow multiple dispatches
             source = tuple(source_list)
+
+            # Telemetry for metabolic cost mapping
+            dispatch_distance = dist(source[2], source[3], predict_planet_pos(best_target[2], best_target[3], angular_vel, travel_time_val)[0], predict_planet_pos(best_target[2], best_target[3], angular_vel, travel_time_val)[1])
+            total_metabolic_cost += dispatch_distance * req_mass
+            total_ships_dispatched += req_mass
+
+    t_end = time.perf_counter()
+    compute_time = t_end - t_start
+    print(f">>> METABOLIC_TELEMETRY [Step {step}]: compute_time={compute_time:.4f}s, ships_dispatched={total_ships_dispatched}, metabolic_cost={total_metabolic_cost:.2f}")
 
     return moves

@@ -29,3 +29,10 @@
 #       - CONTROL(PROFILE) | TYPE(STRUCTURAL_PROFILE) | SCHEMA('zachman_framework_schema.json')
 #       - CONTROL(LOCATION) | TYPE(STRUCTURAL_POSITION) | RULE(TERMINAL)
 #       - CONTROL(FORM) | TYPE(JSON)
+
+#   - id: F4_Phronesis_Guard_Implementation
+#     spec:
+#       - CONTROL(FORM) | TYPE(Algorithmic, Agentic_Routing)
+#       - CONTROL(TRIGGER) | CONDITION(persona_confidence_score < 0.6)
+#       - CONTROL(ORIENTATION) | TYPE(STRATEGIC_ESCROW) | DATUM(Golden_Scar_Protocol) | TOLERANCE(PHI: 1.618)
+#       - CONTROL(OUTPUT) | MARKERS([∇], [⊘], [Φ]) | CONSTRAINT(Do_not_collapse_state)
