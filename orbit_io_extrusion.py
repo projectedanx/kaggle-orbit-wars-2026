@@ -2,8 +2,6 @@ import asyncio
 import aiofiles
 import orjson
 import gzip
-import queue
-import threading
 from pathlib import Path
 from dataclasses import dataclass
 

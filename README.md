@@ -14,3 +14,8 @@ To support thermodynamic efficiency and large-scale replay generation (~10,000 m
 - Writing small replays directly to WSL-mounted Windows drives (`/mnt/c`) is a massive I/O bottleneck. The current `orbit_io_extrusion.py` script mitigates this using `aiofiles` and gzip compression. A RAM disk (`tmpfs`) is recommended for the fastest throughput.
 - JAX handles dynamic operations poorly. Pre-allocation of planet and fleet states to fixed sizes (`MAX_PLANETS=64`, `MAX_FLEETS=128`) heavily optimized our simulation steps.
 - Kaggle `toJSON()` schema validation relies heavily on exact structural parsing. When reconstructing replays from JAX snapshots, ensure proper injection of `initial_planets`.
+
+### Agentic Implementation & Telemetry
+- **orbit_agent_manifest.py** was updated with the full agent logic from `aurelius_kinetic_8.py`.
+- **Metabolic Cost Mapping**: Introduced a telemetry layer in the agent that tracks and logs the "metabolic cost" of operations, calculated using dispatch distance, number of ships dispatched, and compute time per step.
+- Refactored HPC Runner to use `AsyncReplayWriter` from `orbit_io_extrusion.py` to optimize replay serialization throughput using an internal queue and gzip compression, resolving the I/O bottleneck when saving large replays directly.
