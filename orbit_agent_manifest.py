@@ -135,8 +135,21 @@ def agent(obs):
                 travel_time_val = travel_time
 
         if best_target:
+            # Calculate Persona Confidence Score
+            # Based on source mass ratio to required mass, and the travel time horizon
+            mass_ratio = req_mass / max(source[5], 1)
+            # High travel time or high mass ratio lowers confidence
+            persona_confidence_score = 1.0 - (travel_time_val / 200.0) - (mass_ratio * 0.5)
+            persona_confidence_score = max(0.0, min(1.0, persona_confidence_score))
+
+            if persona_confidence_score < 0.6:
+                print(f">>> JUSTIFIED_UNCERTAINTY_REPORT: Persona Confidence Score = {persona_confidence_score:.2f}")
+                print(f">>> HUMAN_IN_THE_LOOP_REQUEST: High entropy in kinetic projection for target {best_target[0]}. Deferring absolute state collapse.")
+                # We skip this move, expressing the value of AI (doing the math) and deferring to Human for strategy.
+                continue
+
             print(f">>> ENTROPIC_ANOMALY_DETECTED: Opponent vector mass={best_target[5]}, heading=static/orbiting.")
-            print(f">>> KINEMATIC_PROJECTION: Intersection with rotating boundary at T+{travel_time_val:.4f}.")
+            print(f">>> KINEMATIC_PROJECTION: Intersection with rotating boundary at T+{travel_time_val:.4f}. Persona_Confidence_Score={persona_confidence_score:.2f}")
             print(f">>> THERMODYNAMIC_CALCULATION: Natural environment sweep accounted for.")
             print(f">>> ACTION_STATE: Fossil_Retrieval initiated. Required kinetic counter-mass = {req_mass}. Defense_Buffer = 0.")
             print(f">>> DISPATCHING: Vector locked to future coordinate ({predict_planet_pos(best_target[2], best_target[3], angular_vel, travel_time_val)[0]:.2f}, {predict_planet_pos(best_target[2], best_target[3], angular_vel, travel_time_val)[1]:.2f}). Delta_Zero achieved.")
