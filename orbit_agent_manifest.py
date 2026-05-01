@@ -144,8 +144,43 @@ def agent(obs):
 
             if persona_confidence_score < 0.6:
                 print(f">>> JUSTIFIED_UNCERTAINTY_REPORT: Persona Confidence Score = {persona_confidence_score:.2f}")
-                print(f">>> HUMAN_IN_THE_LOOP_REQUEST: High entropy in kinetic projection for target {best_target[0]}. Deferring absolute state collapse.")
-                # We skip this move, expressing the value of AI (doing the math) and deferring to Human for strategy.
+                print(f">>> [∇] HUMAN_IN_THE_LOOP_REQUEST: High entropy in kinetic projection for target {best_target[0]}.")
+                print(f">>> [⊘] ACTIVATING +++PhronesisGuard (Strategic Escrow). Holding action in [Φ] superposition.")
+
+                # Board Entropy calculation
+                # Simplified entropy representation: number of enemy fleets and planets
+                board_entropy = len(enemy_planets) + len([f for f in raw_fleets if f[1] != player])
+                print(f">>> [Φ] Board Entropy Calculated: {board_entropy}. Executing Golden Scar Protocol.")
+
+                # Find the safest friendly planet (Strategic Escrow)
+                safest_planet = None
+                max_safe_dist = -float('inf')
+                for friendly in my_planets:
+                    if friendly[0] == source[0]:
+                        continue
+                    # Safest is the one furthest from all enemies
+                    min_dist_to_enemy = min([dist(friendly[2], friendly[3], ep[2], ep[3]) for ep in enemy_planets]) if enemy_planets else 0
+                    if min_dist_to_enemy > max_safe_dist:
+                        max_safe_dist = min_dist_to_enemy
+                        safest_planet = friendly
+
+                if safest_planet:
+                    escrow_angle = math.atan2(safest_planet[3] - source[3], safest_planet[2] - source[2])
+                    # Golden Scar Protocol (Φ = 1.618 / 1.000)
+                    # We send the required mass, adjusted by the golden ratio as a non-stochastic Semantic Anchor
+                    phi = 1.618
+                    escrow_mass = int(req_mass / phi)
+                    if escrow_mass > 0 and source[5] >= escrow_mass:
+                        moves.append([source[0], escrow_angle, escrow_mass])
+                        source_list = list(source)
+                        source_list[5] -= escrow_mass
+                        source = tuple(source_list)
+
+                        dispatch_distance = dist(source[2], source[3], safest_planet[2], safest_planet[3])
+                        total_metabolic_cost += dispatch_distance * escrow_mass
+                        total_ships_dispatched += escrow_mass
+
+                        print(f">>> [Φ] Dispatched {escrow_mass} mass to Strategic Escrow node {safest_planet[0]}.")
                 continue
 
             print(f">>> ENTROPIC_ANOMALY_DETECTED: Opponent vector mass={best_target[5]}, heading=static/orbiting.")

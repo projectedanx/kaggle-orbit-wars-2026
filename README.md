@@ -16,6 +16,7 @@ To support thermodynamic efficiency and large-scale replay generation (~10,000 m
 - Kaggle `toJSON()` schema validation relies heavily on exact structural parsing. When reconstructing replays from JAX snapshots, ensure proper injection of `initial_planets`.
 
 ### Agentic Implementation & Telemetry
+- **Strategic Escrow (Phronesis Guard)**: Implemented Human-AI Strategic Escrow. When the Persona Confidence Score is low (< 0.6), indicating high entropy in kinetic projection, the agent defers absolute state collapse. Instead of discarding the action, it routes the required mass to the safest friendly planet using the Golden Scar Protocol (Φ = 1.618 / 1.000). This holds the contradiction in `[Φ]` superposition, allowing the system to accumulate resources defensively while awaiting further heuristic alignment.
 - **orbit_agent_manifest.py** was updated with the full agent logic from `aurelius_kinetic_8.py`.
 - **Metabolic Cost Mapping**: Introduced a telemetry layer in the agent that tracks and logs the "metabolic cost" of operations, calculated using dispatch distance, number of ships dispatched, and compute time per step.
 - Refactored HPC Runner to use `AsyncReplayWriter` from `orbit_io_extrusion.py` to optimize replay serialization throughput using an internal queue and gzip compression, resolving the I/O bottleneck when saving large replays directly.
