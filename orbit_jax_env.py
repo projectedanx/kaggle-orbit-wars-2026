@@ -130,7 +130,7 @@ def step_single(state: dict, action: jnp.ndarray) -> tuple:
 
 
 def _advance_fleets(fleets):
-    ratio = jnp.log(jnp.maximum(ships, 1.0)) / jnp.log(1000.0)
+    ratio = jnp.log(jnp.maximum(fleets[:, :, 6], 1.0)) / jnp.log(1000.0)
     ratio = jnp.clip(ratio, 0.0, 1.0)
     speed = 1.0 + (SHIP_SPEED - 1.0) * (ratio ** 1.5)
     dx = speed * jnp.cos(fleets[:, :, 4])

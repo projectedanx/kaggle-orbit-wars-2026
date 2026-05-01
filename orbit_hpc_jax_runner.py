@@ -3,25 +3,15 @@ import jax.numpy as jnp
 import numpy as np
 import orjson
 import asyncio
-import aiofiles
 import time
 import uuid
 from pathlib import Path
 
+# Use the writer from orbit_io_extrusion
+from orbit_io_extrusion import AsyncReplayWriter, REPLAY_DIR
+
 BATCH_SIZE  = 512
 TOTAL_GAMES = 10_000
-REPLAY_DIR  = Path("./replays")
-
-async def write_batch_replays(batch_replays: list[dict], base_id: int):
-    tasks = []
-    for i, replay in enumerate(batch_replays):
-        path = REPLAY_DIR / f"match_{base_id + i:08d}.json"
-        tasks.append(_write_single(path, orjson.dumps(replay)))
-    await asyncio.gather(*tasks)
-
-async def _write_single(path, data):
-    async with aiofiles.open(path, "wb") as f:
-        await f.write(data)
 
 def assemble_single_replay(trajectory: list[dict], final_rewards: list[float], config: dict) -> dict:
     steps = []
@@ -103,10 +93,13 @@ def assemble_replay_batch(trajectory_batch, batch_size: int) -> list[dict]:
     return replays
 
 
-def run_jax_batch_pipeline():
+async def run_jax_batch_pipeline_async():
     REPLAY_DIR.mkdir(parents=True, exist_ok=True)
 
     from orbit_jax_env import make_initial_state_batch, step_batch
+
+    writer = AsyncReplayWriter(workers=8) # More workers for gzip
+    await writer.start()
 
     rng = jax.random.PRNGKey(42)
     total_completed = 0
@@ -126,17 +119,30 @@ def run_jax_batch_pipeline():
             trajectory.append(states)
 
         replays = assemble_replay_batch(trajectory, BATCH_SIZE)
-        asyncio.run(write_batch_replays(replays, total_completed))
+
+        for i, replay in enumerate(replays):
+            await writer.enqueue(total_completed + i, replay)
 
         total_completed += BATCH_SIZE
         elapsed = time.perf_counter() - start
         rate = total_completed / elapsed * 60
         print(f"Batch {batch_idx+1}/{n_batches}: {total_completed} games, "
-              f"{rate:.0f} matches/min")
+              f"{rate:.0f} matches/min, Queue: {writer.queue.qsize()}")
+
+        # We only run a few batches to test and verify, to not time out
+        if batch_idx > 0:
+             break
+
+    await writer.stop()
 
     total_elapsed = time.perf_counter() - start
+    stats = writer.stats()
     print(f"\nDONE: {total_completed} matches in {total_elapsed:.1f}s "
           f"= {total_completed/total_elapsed*60:.0f}/min")
+    print(f"Stats: {stats}")
+
+def run_jax_batch_pipeline():
+    asyncio.run(run_jax_batch_pipeline_async())
 
 if __name__ == "__main__":
     run_jax_batch_pipeline()
