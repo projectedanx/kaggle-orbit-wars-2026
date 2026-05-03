@@ -23,3 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v2.1.0] - Strategic Emergence Inversion
 ### Changed
 - **Phronesis Guard Inversion**: Transitioned from Defensive Escrow to Topological Forward Escrow. When the AI encounters high entropy (Persona Confidence Score < 0.6), instead of retreating mass to the safest node, it now calculates a `forward_node` (closest friendly planet to the center) and routes mass there. This creates an *Interference Fit*, proactively deploying resources to disrupt future enemy movement and converting uncertainty into strategic emergence.
+
+## [Unreleased]
+### Added
+- Unified Meta-Prompting API (`aurelius_meta_api.py`) featuring `PhantomDimensionOperator`, `PlausibilityOracle`, `ProvenanceTracker`, and `HyperSpectralRenderer`.
+- TDD framework integration for the API via `tests/test_aurelius_meta_api.py`.
+- Architecture Decision Record `docs/adr/003-aurelius-meta-prompting-api.md`.
