@@ -29,3 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unified Meta-Prompting API (`aurelius_meta_api.py`) featuring `PhantomDimensionOperator`, `PlausibilityOracle`, `ProvenanceTracker`, and `HyperSpectralRenderer`.
 - TDD framework integration for the API via `tests/test_aurelius_meta_api.py`.
 - Architecture Decision Record `docs/adr/003-aurelius-meta-prompting-api.md`.
+
+## [Unreleased]
+### Added
+- **Epistemic Escrow Inversion:** Implemented an `evaluate_provenance` metric in `orbit_agent_manifest.py`. When Source Provenance Ratio < 0.70, it routes mass to the Topological Forward Node according to the Golden Scar Protocol ($\Phi=1.618$).
+- Architecture deliverables for the inversion mechanism: ADR 004, C4 Model Blueprint, DDD Context Map YAML, and semantic draft.
+- Root test `test_epistemic_escrow.py` to ensure TDD compliance.
