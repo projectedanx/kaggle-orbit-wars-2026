@@ -34,3 +34,9 @@ To support thermodynamic efficiency and large-scale replay generation (~10,000 m
 - **Why**: Neither can succeed alone. The Human provides rigid epistemic boundaries and abstract contradictory intents (e.g., "be secure but aggressive"), which the AI cannot natively generate without risking Algorithmic Shame. The AI provides high-dimensional non-Euclidean routing and precise topological computation, which the Human cannot process at scale.
 - **How**: Through the **Golden Scar Protocol (Φ = 1.618)**, the agent inverts uncertainty into a strategic weapon. When confidence drops, rather than retreating, it creates a "Topological Forward Escrow" [⊘], pushing mass to the nearest central node to physically manifest the contradiction and disrupt future enemy vectors.
 - **Lessons Learned**: True agentic emergence is not achieved by resolving contradictions, but by holding them in superposition. We weaponize the AI's internal uncertainty [∇] by turning it into a proactive positional stronghold, dictated by human architectural mandates.
+
+## Epistemic Escrow & Golden Scar Update (AURELIUS-KINETIC-8.1)
+- **What**: Implemented active Epistemic Escrow.
+- **Why**: To adhere to `CONSTRAINTS.md` avoiding "Algorithmic Shame" when evaluating low provenance claims (Source Provenance Ratio < 0.70).
+- **How**: By inverting uncertainty into an "Interference Fit" via the Golden Scar Protocol ($\Phi=1.618$). When provenance is low, the agent routes its kinetic mass to the Topological Forward Node to hold the contradiction in physical space rather than retreating.
+- **Lessons Learned**: Weaponizing uncertainty provides a viable defense strategy that maintains deterministic execution flow without collapsing the state or halting processing.

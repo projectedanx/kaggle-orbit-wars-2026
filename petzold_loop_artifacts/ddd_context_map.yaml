@@ -1,0 +1,32 @@
+# DCCDSchemaGuard: YAML_METROLOGY_HARD
+# Enforcement: draft_conditioned
+version: "1.1"
+context_map:
+  - bounded_context: "Human Mandate Interface"
+    description: "Handles rigid epistemic boundaries and abstract intents."
+    relationships:
+      - type: "Customer-Supplier"
+        target: "Agent Operational Core"
+        direction: "Downstream"
+
+  - bounded_context: "Agent Operational Core"
+    description: "Executes non-Euclidean routing and epistemic escrow resolution."
+    relationships:
+      - type: "Anti-Corruption Layer"
+        target: "Simulation Engine"
+        direction: "Downstream"
+
+  - bounded_context: "Simulation Engine"
+    description: "JAX/XLA Vectorized Environment handling physics and rules."
+    relationships:
+      - type: "Event-Driven Choreography"
+        target: "IO Extrusion Pipeline"
+        direction: "Upstream"
+
+  - bounded_context: "IO Extrusion Pipeline"
+    description: "Asynchronous data persistence for replays."
+
+rules:
+  - "No Shared Databases across contexts."
+  - "No 2PC / XA Transactions."
+  - "Eventual consistency through message brokers."

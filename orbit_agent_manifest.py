@@ -58,6 +58,9 @@ def segment_hits_sun(x1, y1, x2, y2, safety=1.5):
     t2 = (-b + disc) / (2 * a)
     return (0 <= t1 <= 1) or (0 <= t2 <= 1)
 
+def evaluate_provenance(obs):
+    return obs.get("source_provenance", 1.0) if isinstance(obs, dict) else getattr(obs, "source_provenance", 1.0)
+
 # === THE AGENT AURELIUS-KINETIC-8 ===
 def agent(obs):
     t_start = time.perf_counter()
@@ -68,6 +71,7 @@ def agent(obs):
     raw_fleets = obs.get("fleets", []) if isinstance(obs, dict) else getattr(obs, "fleets", [])
     angular_vel = obs.get("angular_velocity", 0.0) if isinstance(obs, dict) else getattr(obs, "angular_velocity", 0.0)
     step = obs.get("step", 0) if isinstance(obs, dict) else getattr(obs, "step", 0)
+    source_provenance = evaluate_provenance(obs)
 
     my_planets = [p for p in raw_planets if p[1] == player]
     enemy_planets = [p for p in raw_planets if p[1] != player]
@@ -79,6 +83,38 @@ def agent(obs):
 
     total_metabolic_cost = 0.0
     total_ships_dispatched = 0
+
+    if source_provenance < 0.70:
+        print(f">>> [∇] EPISTEMIC_ESCROW_TRIGGERED: Source Provenance {source_provenance} < 0.70")
+        for source in my_planets:
+            if source[5] < 10:
+                continue
+
+            forward_node = None
+            min_center_dist = float("inf")
+            for friendly in my_planets:
+                if friendly[0] == source[0]:
+                    continue
+                d_center = dist(friendly[2], friendly[3], CENTER_X, CENTER_Y)
+                if d_center < min_center_dist:
+                    min_center_dist = d_center
+                    forward_node = friendly
+
+            if forward_node:
+                escrow_angle = math.atan2(forward_node[3] - source[3], forward_node[2] - source[2])
+                phi = 1.618
+                escrow_mass = int(source[5] / phi)
+                if escrow_mass > 0:
+                    moves.append([source[0], escrow_angle, escrow_mass])
+                    dispatch_distance = dist(source[2], source[3], forward_node[2], forward_node[3])
+                    total_metabolic_cost += dispatch_distance * escrow_mass
+                    total_ships_dispatched += escrow_mass
+                    print(f">>> [⊘] Golden Scar [Φ={phi}] Routing {escrow_mass} mass to Topological Forward Node {forward_node[0]}.")
+
+        t_end = time.perf_counter()
+        compute_time = t_end - t_start
+        print(f">>> METABOLIC_TELEMETRY [Step {step}]: compute_time={compute_time:.4f}s, ships_dispatched={total_ships_dispatched}, metabolic_cost={total_metabolic_cost:.2f}")
+        return moves
 
     # KINEMATIC_PROJECTION and THERMODYNAMIC_CALCULATION
     for source in my_planets:
