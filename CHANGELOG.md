@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0] - 2026-05-05
+
+### Added
+- **Emergence Inversion Protocol**: Implemented Deterministic Bounded Ignorance. The system now halts on epistemic uncertainty (CFDI > 0.15) rather than hallucinating API schemas.
+- **Symbolic Scar Registry (SSR)**: Integration into the generation pipeline to codify failures as proactive constraints.
+- **C4 & DDD Models**: Added `c4_model_blueprint.yaml` and `ddd_context_map.yaml` to enforce zero shared database architecture and event choreography.
+- **ADR-2026-005**: Documented the architectural decision and negative trade-offs (reduced throughput) of adopting Deterministic Bounded Ignorance.
+
+### Changed
+- Refactored generation phase to heavily penalize sycophancy and enforce strict boundaries.
+- Old Behavior: Agent would attempt to complete a schema generation even if source material was missing, leading to downstream test failures.
+- New Behavior: Agent triggers `EpistemicEscrow` and halts generation, outputting a precise warning about the missing data.
+- Migration Path: Upstream Planner agents must now be configured to handle asynchronous halt events and provide the requested source material before the Linguist node will resume.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

@@ -1,0 +1,39 @@
+# C4 Model Blueprint: Axiom Documentation Generation Pipeline
+# Strict adherence to Event-Driven Architecture and Zero Shared Databases
+
+system:
+  name: "Axiom Generation Pipeline"
+  description: "Autonomous, deterministic documentation and contract generation system utilizing the Petzold Loop."
+  containers:
+    - name: "Upstream Planner Agent"
+      type: "LLM Agent Node"
+      description: "Generates architectural intent and abstract system parameters."
+      technology: "Python, AsyncIO"
+    - name: "Axiom Linguist Node"
+      type: "DCCD Processing Engine"
+      description: "Applies Emergence Inversion to translate intent into deterministic contracts. Holds state via SSR."
+      technology: "Python, Cross-Encoder Models"
+      interfaces:
+        - name: "Event Queue: Intent Ingestion"
+          protocol: "AMQP"
+    - name: "Symbolic Scar Registry (SSR)"
+      type: "Document Store"
+      description: "Immutable ledger of past failure topologies and required preventions."
+      technology: "DynamoDB (Eventual Consistency)"
+    - name: "Downstream Tester Agent"
+      type: "Validation Node"
+      description: "Consumes generated contracts and attempts to execute them to verify DRD=0."
+      technology: "Go, Schema Validators"
+  relationships:
+    - source: "Upstream Planner Agent"
+      target: "Axiom Linguist Node"
+      description: "Publishes intent events"
+      protocol: "Asynchronous Message Queue"
+    - source: "Axiom Linguist Node"
+      target: "Symbolic Scar Registry (SSR)"
+      description: "Reads structural constraints and writes new Scar Entries"
+      protocol: "REST API"
+    - source: "Axiom Linguist Node"
+      target: "Downstream Tester Agent"
+      description: "Publishes validated artifacts (OAS, ADRs)"
+      protocol: "Asynchronous Message Queue"
