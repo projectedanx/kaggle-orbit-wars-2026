@@ -1,0 +1,32 @@
+# DDD Context Map: Axiom Ecosystem
+# Rule: No Shared Databases, No Two-Phase Commit (2PC)
+
+contexts:
+  - name: "Intent Generation Context"
+    type: "Core Domain"
+    entities: ["Architectural Intent", "System Parameters"]
+    events_published: ["IntentGeneratedEvent"]
+
+  - name: "Deterministic Contract Generation Context"
+    type: "Core Domain (Axiom)"
+    entities: ["Draft Artifact", "Validated Contract", "Scar Entry"]
+    events_subscribed: ["IntentGeneratedEvent"]
+    events_published: ["ContractValidatedEvent", "EpistemicEscrowTriggeredEvent", "ScarEntryCreatedEvent"]
+    rules:
+      - "Applies Draft-Conditioned Constrained Decoding (DCCD)"
+      - "Enforces Golden Scar Protocol (Φ=1.618)"
+
+  - name: "Validation & Execution Context"
+    type: "Supporting Subdomain"
+    entities: ["Execution Result", "Schema Violation"]
+    events_subscribed: ["ContractValidatedEvent"]
+    events_published: ["ExecutionFailedEvent", "ExecutionSucceededEvent"]
+
+relationships:
+  - upstream: "Intent Generation Context"
+    downstream: "Deterministic Contract Generation Context"
+    pattern: "Customer/Supplier (Event Choreography)"
+
+  - upstream: "Deterministic Contract Generation Context"
+    downstream: "Validation & Execution Context"
+    pattern: "Conformist (Downstream strictly consumes Upstream schemas)"
