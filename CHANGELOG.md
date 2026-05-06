@@ -49,3 +49,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Epistemic Escrow Inversion:** Implemented an `evaluate_provenance` metric in `orbit_agent_manifest.py`. When Source Provenance Ratio < 0.70, it routes mass to the Topological Forward Node according to the Golden Scar Protocol ($\Phi=1.618$).
 - Architecture deliverables for the inversion mechanism: ADR 004, C4 Model Blueprint, DDD Context Map YAML, and semantic draft.
 - Root test `test_epistemic_escrow.py` to ensure TDD compliance.
+
+## [Unreleased]
+### Added
+- `SymbolicScarRegistry` (SSR) implementation in `symbolic_scar_registry.py` to enforce Deterministic Bounded Ignorance.
+- `EpistemicEscrowException` to handle states of high uncertainty (CFDI > 0.15).
+- TDD validation tests in `tests/test_symbolic_scar_registry.py`.
+- Strategy documentation in `vulcan_emergence_strategy/PLAN.md` and `vulcan_emergence_strategy/CHECKLIST.md`.
+- System architecture ADR (`0001-symbolic-scar-registry.md`) and C4/DDD models in `docs/architecture/`.
