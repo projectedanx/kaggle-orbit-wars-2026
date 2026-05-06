@@ -1,0 +1,11 @@
+name: "DDD Context Map: Emergence Inversion"
+contexts:
+  - name: "Agentic_Routing_Context"
+    description: "Handles AI kinematic routing and topological space navigation."
+  - name: "Epistemic_Governance_Context"
+    description: "Enforces human architectural bounds and maintains the Symbolic Scar Registry."
+relationships:
+  - type: "Customer-Supplier"
+    upstream: "Epistemic_Governance_Context"
+    downstream: "Agentic_Routing_Context"
+    description: "Governance dictates the bounds (Topological Forward Nodes) that Routing must navigate."
