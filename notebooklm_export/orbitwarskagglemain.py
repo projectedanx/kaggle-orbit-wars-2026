@@ -2,6 +2,17 @@ import math
 from kaggle_environments.envs.orbit_wars.orbit_wars import Planet
 
 def nearest_planet_sniper(obs):
+    """
+    Executes the primitive nearest planet sniper logic sequence.
+
+    [∇] Uncertainty Marker: Primitive fallback agent ignoring rotational kinematics.
+
+    Args:
+        obs (dict): The Kaggle environment observation payload.
+
+    Returns:
+        list: Action list containing [source_id, angle, requested_mass].
+    """
     moves = []
     player = obs.get("player", 0) if isinstance(obs, dict) else obs.player
     raw_planets = obs.get("planets", []) if isinstance(obs, dict) else obs.planets

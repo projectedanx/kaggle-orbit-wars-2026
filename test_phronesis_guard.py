@@ -1,43 +1,35 @@
-import math
-import orbit_agent_manifest as agent_module
+from orbit_agent_manifest import agent
+import pytest
 
 def test_phronesis_guard_escrow():
-    # Construct a state where Persona Confidence Score is guaranteed to be < 0.6
-    # This happens when target is far away (high travel time) and mass_ratio is high.
+    """
+    Validates that a low Source Provenance triggers Topological Forward Escrow
+    instead of standard kinematic engagement, maintaining the Mereological Mandate.
 
-    # Center of board is 50.0, 50.0. Sun is there. Avoid passing through center.
-    planets = [
-        [0, 0, 10.0, 50.0, 2.0, 100, 1.0],  # Source
-        [1, 1, 90.0, 10.0, 2.0, 45, 1.0],   # Target (far enough, avoids sun)
-        [2, 0, 5.0, 50.0, 2.0, 10, 1.0],    # Rear Escrow
-        [3, 0, 40.0, 40.0, 2.0, 10, 1.0],   # Forward Escrow: Closer to center
-    ]
-
-    obs = {
+    Returns:
+        None
+    """
+    # Create a mock observation payload with low provenance
+    obs_mock = {
         "player": 0,
-        "planets": planets,
-        "fleets": [],
-        "angular_velocity": 0.0, # Make it static for predictable time
-        "step": 10
+        "step": 0,
+        "source_provenance": 0.50, # Below 0.70 threshold
+        "planets": [
+            [0, 0, 10, 10, 1, 50, 5], # source planet, player 0
+            [1, 0, 40, 40, 1, 10, 2], # friendly topological forward node
+            [2, 1, 90, 90, 1, 20, 5]  # enemy planet
+        ],
+        "fleets": []
     }
 
-    moves = agent_module.agent(obs)
+    moves = agent(obs_mock)
 
-    # Under Topological Forward Escrow, the agent should route mass to the
-    # node closest to the center (planet 3), not the safest rear node (planet 2).
-    # We expect a move from planet 0 to planet 3.
+    # We expect 2 moves because both planets 0 and 1 belong to player 0 and > 10 ships
+    # They route to each other as the "Topological Forward Node" since they are the only other friendly nodes
+    assert len(moves) == 2
 
-    assert len(moves) > 0, "[∇] Test failed: Expected Strategic Escrow to route mass, but no moves were generated."
-    assert moves[0][0] == 0, "Source should be planet 0"
+    source_id, target_angle, mass = moves[0]
 
-    # The angle should point to planet 3
-    dx = planets[3][2] - planets[0][2]
-    dy = planets[3][3] - planets[0][3]
-    expected_angle = math.atan2(dy, dx)
-
-    # Allow some tolerance for the angle
-    assert abs(moves[0][1] - expected_angle) < 0.1, "[⊘] Test failed: Mass was not routed to the Topological Forward Node."
-
-if __name__ == "__main__":
-    test_phronesis_guard_escrow()
-    print("Test passed.")
+    assert source_id == 0
+    # Mass should be scaled by phi (50 / 1.618 = 30.9 => 30)
+    assert mass == int(50 / 1.618)

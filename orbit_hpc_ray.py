@@ -16,12 +16,28 @@ class OrbitMatchWorker:
     """Stateless Ray actor: runs one match, returns replay dict."""
 
     def __init__(self, agent_a="random", agent_b="random"):
+        """
+        Initializes the stateless OrbitMatchWorker.
+
+        Args:
+            agent_a (str|callable, optional): The first agent identifier. Defaults to "random".
+            agent_b (str|callable, optional): The second agent identifier. Defaults to "random".
+
+        Returns:
+            None
+        """
         self.agent_a = agent_a
         self.agent_b = agent_b
         # Pre-instantiate env once per worker to avoid re-import overhead
         self._env = None
 
     def _get_env(self):
+        """
+        Retrieves or initializes the Kaggle environment for the worker.
+
+        Returns:
+            kaggle_environments.core.Environment: The active environment.
+        """
         if self._env is None:
             self._env = ke.make(
                 'orbit_wars',
@@ -31,6 +47,15 @@ class OrbitMatchWorker:
         return self._env
 
     def run_match(self, match_id: int) -> dict:
+        """
+        Executes a single simulation match synchronously within the worker.
+
+        Args:
+            match_id (int): The unique identifier for this simulation instance.
+
+        Returns:
+            dict: The complete JSON replay of the simulated match.
+        """
         env = self._get_env()
         env.reset()  # Reset state without re-initializing
         env.run([self.agent_a, self.agent_b])
@@ -40,7 +65,16 @@ class OrbitMatchWorker:
 
 
 async def write_replay(replay: dict, match_id: int):
-    """Non-blocking async write to tmpfs."""
+    """
+    Asynchronously writes replay data to disk utilizing orjson and aiofiles.
+
+    Args:
+        replay (dict): The complete match replay dictionary.
+        match_id (int): The match identifier for file naming.
+
+    Returns:
+        None
+    """
     path = REPLAY_DIR / f"match_{match_id:08d}.json"
     data = orjson.dumps(replay)   # orjson is 5-8x faster than json.dumps
     async with aiofiles.open(path, "wb") as f:
@@ -48,6 +82,15 @@ async def write_replay(replay: dict, match_id: int):
 
 
 async def run_batch_pipeline(total_matches: int = 10_000):
+    """
+    Orchestrates the Ray parallelization loop and asynchronous I/O extrusion.
+
+    Args:
+        total_matches (int, optional): The target number of matches to simulate. Defaults to 10000.
+
+    Returns:
+        None
+    """
     ray.init(num_cpus=RAY_WORKERS * 2, ignore_reinit_error=True)
 
     workers = [OrbitMatchWorker.remote() for _ in range(RAY_WORKERS)]

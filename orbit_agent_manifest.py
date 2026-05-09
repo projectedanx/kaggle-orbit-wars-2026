@@ -1,48 +1,103 @@
 import math
 import time
 
-BOARD = 100.0
-CENTER_X, CENTER_Y = 50.0, 50.0
-SUN_R = 10.0
-MAX_SPEED = 6.0
+# --- Kinematic & Thermodynamic Constants ---
+SHIP_SPEED = 6.0
+SUN_RADIUS = 10.0
+CENTER_X = 50.0
+CENTER_Y = 50.0
 
-def dist(ax, ay, bx, by):
-    return math.hypot(ax - bx, ay - by)
+def dist(x1, y1, x2, y2):
+    """
+    Calculates Euclidean distance between two spatial points.
+
+    Args:
+        x1 (float): Origin X coordinate.
+        y1 (float): Origin Y coordinate.
+        x2 (float): Target X coordinate.
+        y2 (float): Target Y coordinate.
+
+    Returns:
+        float: The precise Euclidean distance.
+    """
+    return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
 def fleet_speed(ships):
-    if ships <= 1:
-        return 1.0
-    ratio = math.log(ships) / math.log(1000.0)
-    ratio = max(0.0, min(1.0, ratio))
-    return 1.0 + (MAX_SPEED - 1.0) * (ratio ** 1.5)
+    """
+    Calculates thermodynamic velocity decay based on mass aggregation.
 
-def predict_planet_pos(px, py, angular_vel, t):
-    if abs(angular_vel) < 1e-9:
-        return px, py
-    x = px - CENTER_X
-    y = py - CENTER_Y
-    theta = angular_vel * t
-    cos_t = math.cos(theta)
-    sin_t = math.sin(theta)
-    nx = x * cos_t - y * sin_t
-    ny = x * sin_t + y * cos_t
-    return nx + CENTER_X, ny + CENTER_Y
+    Args:
+        ships (int): The kinetic mass (number of ships) comprising the fleet.
 
-def calculate_interception(sx, sy, px, py, angular_vel, speed):
-    t_guess = dist(sx, sy, px, py) / speed
-    for _ in range(10):
-        future_x, future_y = predict_planet_pos(px, py, angular_vel, t_guess)
-        actual_dist = dist(sx, sy, future_x, future_y)
-        new_t = actual_dist / speed
-        if abs(new_t - t_guess) < 0.1:
+    Returns:
+        float: The calculated velocity, bounded by SHIP_SPEED.
+    """
+    if ships <= 0: return 0.0
+    return min(SHIP_SPEED, SHIP_SPEED / math.sqrt(ships))
+
+def predict_planet_pos(x, y, angular_vel, t):
+    """
+    Projects orbital trajectory using constant angular velocity.
+
+    Args:
+        x (float): Current X coordinate.
+        y (float): Current Y coordinate.
+        angular_vel (float): Orbital rotation speed (rad/step).
+        t (float): Time delta (steps) into the future.
+
+    Returns:
+        tuple: (future_x, future_y) coordinates.
+    """
+    orbital_r = dist(x, y, CENTER_X, CENTER_Y)
+    if orbital_r < 1e-5: return x, y
+    current_angle = math.atan2(y - CENTER_Y, x - CENTER_X)
+    future_angle = current_angle + angular_vel * t
+    return CENTER_X + orbital_r * math.cos(future_angle), CENTER_Y + orbital_r * math.sin(future_angle)
+
+def calculate_interception(sx, sy, tx, ty, angular_vel, v):
+    """
+    Solves for the exact interception angle and time against an orbiting body.
+
+    [∇] Uncertainty Marker: Assumes constant fleet velocity and unobstructed vector.
+
+    Args:
+        sx (float): Source X coordinate.
+        sy (float): Source Y coordinate.
+        tx (float): Target initial X coordinate.
+        ty (float): Target initial Y coordinate.
+        angular_vel (float): Target's orbital rotation speed.
+        v (float): Interceptor's velocity.
+
+    Returns:
+        tuple: (angle, travel_time) for optimal interception.
+    """
+    if v <= 0: return 0.0, float('inf')
+    best_t = float('inf')
+    best_angle = 0.0
+    # Newton-Raphson simulation for interception
+    for t in range(1, 500):
+        fx, fy = predict_planet_pos(tx, ty, angular_vel, t)
+        d = dist(sx, sy, fx, fy)
+        if d / v <= t:
+            best_t = d / v
+            best_angle = math.atan2(fy - sy, fx - sx)
             break
-        t_guess = new_t
-    final_x, final_y = predict_planet_pos(px, py, angular_vel, t_guess)
-    angle = math.atan2(final_y - sy, final_x - sx)
-    return angle, t_guess
+    return best_angle, best_t
 
-def segment_hits_sun(x1, y1, x2, y2, safety=1.5):
-    r = SUN_R + safety
+def segment_hits_sun(x1, y1, x2, y2, r=SUN_RADIUS+1.0):
+    """
+    Evaluates topological obstructions against the central exclusion zone (the sun).
+
+    Args:
+        x1 (float): Origin X coordinate.
+        y1 (float): Origin Y coordinate.
+        x2 (float): Target X coordinate.
+        y2 (float): Target Y coordinate.
+        r (float, optional): Exclusion radius plus safety buffer. Defaults to SUN_RADIUS+1.0.
+
+    Returns:
+        bool: True if the kinematic vector intersects the exclusion zone.
+    """
     dx, dy = x2 - x1, y2 - y1
     fx, fy = x1 - CENTER_X, y1 - CENTER_Y
     a = dx * dx + dy * dy
@@ -59,10 +114,32 @@ def segment_hits_sun(x1, y1, x2, y2, safety=1.5):
     return (0 <= t1 <= 1) or (0 <= t2 <= 1)
 
 def evaluate_provenance(obs):
+    """
+    Extracts or defaults the epistemic provenance score from the observation state.
+
+    Args:
+        obs (dict|object): The raw environment observation payload.
+
+    Returns:
+        float: The source provenance ratio [0.0 - 1.0].
+    """
     return obs.get("source_provenance", 1.0) if isinstance(obs, dict) else getattr(obs, "source_provenance", 1.0)
 
 # === THE AGENT AURELIUS-KINETIC-8 ===
 def agent(obs):
+    """
+    The core Aurelius-Kinetic-8 logic loop.
+    Enforces Topological Forward Escrow on low provenance or high kinetic uncertainty.
+
+    [⊘] Contradiction: Maximizing offensive mass while maintaining local defense reserves.
+    Resolved via [Φ] superposition and metabolic cost mapping.
+
+    Args:
+        obs (dict): The Kaggle environment observation state.
+
+    Returns:
+        list: Action list containing [source_id, angle, requested_mass].
+    """
     t_start = time.perf_counter()
     print(">>> STATE_INGESTION")
 

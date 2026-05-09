@@ -14,6 +14,19 @@ BATCH_SIZE  = 512
 TOTAL_GAMES = 10_000
 
 def assemble_single_replay(trajectory: list[dict], final_rewards: list[float], config: dict) -> dict:
+    """
+    Reconstructs a Kaggle-compatible JSON replay from a JAX array trajectory.
+
+    [OMISSION: Visual-only fields are stubbed to minimize serialized replay size.]
+
+    Args:
+        trajectory (list[dict]): A chronological list of JAX-state dictionaries.
+        final_rewards (list[float]): The terminal rewards for both players.
+        config (dict): Game configuration dictionary.
+
+    Returns:
+        dict: The fully constructed JSON replay tree.
+    """
     steps = []
     for step_idx, state in enumerate(trajectory):
         planets_np = np.array(state["planets"])
@@ -71,6 +84,16 @@ def assemble_single_replay(trajectory: list[dict], final_rewards: list[float], c
 
 
 def assemble_replay_batch(trajectory_batch, batch_size: int) -> list[dict]:
+    """
+    Iterates over a batched tensor trajectory and extracts individual game replays.
+
+    Args:
+        trajectory_batch (list[dict]): Batched JAX states representing the simulation timeline.
+        batch_size (int): The number of concurrent games in the batch.
+
+    Returns:
+        list[dict]: A list of completely assembled replay dictionaries.
+    """
     replays = []
     config = {
         "episodeSteps": 500, "actTimeout": 1,
@@ -94,6 +117,13 @@ def assemble_replay_batch(trajectory_batch, batch_size: int) -> list[dict]:
 
 
 async def run_jax_batch_pipeline_async():
+    """
+    Executes the main asynchronous HPC loop: simulating games in JAX batches
+    and dispatching replays via Stigmergic Concurrency extrusions.
+
+    Returns:
+        None
+    """
     REPLAY_DIR.mkdir(parents=True, exist_ok=True)
 
     from orbit_jax_env import make_initial_state_batch, step_batch
@@ -142,6 +172,12 @@ async def run_jax_batch_pipeline_async():
     print(f"Stats: {stats}")
 
 def run_jax_batch_pipeline():
+    """
+    Synchronous entry point for the HPC JAX batch pipeline.
+
+    Returns:
+        None
+    """
     asyncio.run(run_jax_batch_pipeline_async())
 
 if __name__ == "__main__":

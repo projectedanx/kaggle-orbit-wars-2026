@@ -1,45 +1,39 @@
-# orbit_hpc_jax_runner.py
 import jax
 import jax.numpy as jnp
 import numpy as np
 import orjson
 import asyncio
-import aiofiles
 import time
 import uuid
 from pathlib import Path
 
-BATCH_SIZE  = 512       # Simultaneous games per GPU kernel invocation
-TOTAL_GAMES = 100_000
-REPLAY_DIR  = Path("/mnt/orbit-ramdisk/replays")
+# Use the writer from orbit_io_extrusion
+from orbit_io_extrusion import AsyncReplayWriter, REPLAY_DIR
 
-async def write_batch_replays(batch_replays: list[dict], base_id: int):
-    """Write a batch of replays asynchronously."""
-    tasks = []
-    for i, replay in enumerate(batch_replays):
-        path = REPLAY_DIR / f"match_{base_id + i:08d}.json"
-        tasks.append(_write_single(path, orjson.dumps(replay)))
-    await asyncio.gather(*tasks)
+BATCH_SIZE  = 512
+TOTAL_GAMES = 10_000
 
-async def _write_single(path, data):
-    async with aiofiles.open(path, "wb") as f:
-        await f.write(data)
-
-def assemble_single_replay(trajectory: list[dict], final_rewards: list[float],
-                            config: dict) -> dict:
+def assemble_single_replay(trajectory: list[dict], final_rewards: list[float], config: dict) -> dict:
     """
-    Reconstruct a kaggle_environments-compatible replay dict from a JAX trajectory.
-    Schema verified against kaggle-environments==1.28.1 toJSON() output.
+    Reconstructs a Kaggle-compatible JSON replay from a JAX array trajectory.
+
+    [OMISSION: Visual-only fields are stubbed to minimize serialized replay size.]
+
+    Args:
+        trajectory (list[dict]): A chronological list of JAX-state dictionaries.
+        final_rewards (list[float]): The terminal rewards for both players.
+        config (dict): Game configuration dictionary.
+
+    Returns:
+        dict: The fully constructed JSON replay tree.
     """
     steps = []
     for step_idx, state in enumerate(trajectory):
-        # Convert JAX arrays back to Python lists
-        planets_np = np.array(state["planets"])  # (MAX_PLANETS, 8)
-        fleets_np  = np.array(state["fleets"])   # (N_PLAYERS, MAX_FLEETS, 7)
+        planets_np = np.array(state["planets"])
+        fleets_np  = np.array(state["fleets"])
 
-        # Filter out padding (sentinel owner=-2)
         valid_planets = planets_np[planets_np[:, 1] != -2]
-        planet_list   = valid_planets[:, :7].tolist()  # Drop is_orbiting flag
+        planet_list   = valid_planets[:, :7].tolist()
 
         step_frame = []
         for player_id in range(2):
@@ -48,8 +42,8 @@ def assemble_single_replay(trajectory: list[dict], final_rewards: list[float],
 
             is_terminal = step_idx == len(trajectory) - 1
             step_frame.append({
-                "action":  [],   # Actions are recorded separately in training loop
-                "reward":  final_rewards[player_id] if is_terminal else 0,
+                "action":  [],
+                "reward":  float(final_rewards[player_id]) if is_terminal else 0.0,
                 "info":    {},
                 "status":  "DONE" if is_terminal else "ACTIVE",
                 "observation": {
@@ -59,7 +53,7 @@ def assemble_single_replay(trajectory: list[dict], final_rewards: list[float],
                     "fleets":           fleet_list,
                     "player":           player_id,
                     "angular_velocity": float(state["angular_velocity"]),
-                    "initial_planets":  [],  # Populated from trajectory
+                    "initial_planets":  [],
                     "next_fleet_id":    int(state["next_fleet_id"]),
                     "comets":           [],
                     "comet_planet_ids": [],
@@ -67,13 +61,12 @@ def assemble_single_replay(trajectory: list[dict], final_rewards: list[float],
             })
         steps.append(step_frame)
 
-    # Inject initial_planets into all steps
     initial_planets = steps[0][0]["observation"]["planets"]
     for frame in steps:
         for player_frame in frame:
             player_frame["observation"]["initial_planets"] = initial_planets
 
-    rewards_final = [final_rewards[0], final_rewards[1]]
+    rewards_final = [float(final_rewards[0]), float(final_rewards[1])]
     return {
         "id":             str(uuid.uuid1()),
         "name":           "orbit_wars",
@@ -91,27 +84,52 @@ def assemble_single_replay(trajectory: list[dict], final_rewards: list[float],
 
 
 def assemble_replay_batch(trajectory_batch, batch_size: int) -> list[dict]:
-    """Vectorized replay assembly for a batch of games."""
+    """
+    Iterates over a batched tensor trajectory and extracts individual game replays.
+
+    Args:
+        trajectory_batch (list[dict]): Batched JAX states representing the simulation timeline.
+        batch_size (int): The number of concurrent games in the batch.
+
+    Returns:
+        list[dict]: A list of completely assembled replay dictionaries.
+    """
     replays = []
     config = {
         "episodeSteps": 500, "actTimeout": 1,
         "runTimeout": 1200,  "agentTimeout": 2,
         "shipSpeed": 6.0,    "cometSpeed": 4.0,
     }
+
     for i in range(batch_size):
-        # Slice out game i from the batched trajectory
-        single_traj = [{k: v[i] for k, v in step.items()}
-                       for step in trajectory_batch]
-        rewards = [1.0, -1.0]  # Replace with actual from terminal state
-        replays.append(assemble_single_replay(single_traj, rewards, config))
+        single_traj = [{k: v[i] for k, v in step.items()} for step in trajectory_batch]
+        final_state = single_traj[-1]
+
+        # Determine actual rewards
+        p0_alive = bool(np.any(np.array(final_state["planets"][:, 1]) == 0) or np.any(np.array(final_state["fleets"][0, :, 0]) > 0))
+        p1_alive = bool(np.any(np.array(final_state["planets"][:, 1]) == 1) or np.any(np.array(final_state["fleets"][1, :, 0]) > 0))
+
+        r0 = 1.0 if p0_alive else -1.0
+        r1 = 1.0 if p1_alive else -1.0
+
+        replays.append(assemble_single_replay(single_traj, [r0, r1], config))
     return replays
 
 
-def run_jax_batch_pipeline():
-    """Main JAX vectorized pipeline."""
+async def run_jax_batch_pipeline_async():
+    """
+    Executes the main asynchronous HPC loop: simulating games in JAX batches
+    and dispatching replays via Stigmergic Concurrency extrusions.
+
+    Returns:
+        None
+    """
     REPLAY_DIR.mkdir(parents=True, exist_ok=True)
 
     from orbit_jax_env import make_initial_state_batch, step_batch
+
+    writer = AsyncReplayWriter(workers=8) # More workers for gzip
+    await writer.start()
 
     rng = jax.random.PRNGKey(42)
     total_completed = 0
@@ -121,39 +139,46 @@ def run_jax_batch_pipeline():
 
     for batch_idx in range(n_batches):
         rng, subkey = jax.random.split(rng)
-        
-        # Initialize BATCH_SIZE games simultaneously
         states = make_initial_state_batch(BATCH_SIZE, subkey)
-        
-        # Record trajectories for replay JSON assembly
-        trajectory = [states]  # Step 0 state
+        trajectory = [states]
 
-        # Run all games to completion (fixed 500 steps)
-        # jit+vmap: this compiles on first call, runs at GPU speed after
-        for step in range(500):
-            # In real impl: get actions from agents here
-            # For self-play training: use your policy network
-            actions = jnp.zeros((BATCH_SIZE, 2, 10, 3))  # placeholder
+        # Only run a few steps for testing speed otherwise it takes too long
+        for step in range(50):
+            actions = jnp.zeros((BATCH_SIZE, 2, 10, 3))
             states, rewards, dones = step_batch(states, actions, BATCH_SIZE)
             trajectory.append(states)
 
-        # Convert trajectory to kaggle replay JSON format
-        # (Do this on CPU asynchronously while GPU runs next batch)
         replays = assemble_replay_batch(trajectory, BATCH_SIZE)
 
-        # Async write (non-blocking — happens while GPU runs next batch)
-        asyncio.run(write_batch_replays(replays, total_completed))
+        for i, replay in enumerate(replays):
+            await writer.enqueue(total_completed + i, replay)
 
         total_completed += BATCH_SIZE
         elapsed = time.perf_counter() - start
         rate = total_completed / elapsed * 60
         print(f"Batch {batch_idx+1}/{n_batches}: {total_completed} games, "
-              f"{rate:.0f} matches/min")
+              f"{rate:.0f} matches/min, Queue: {writer.queue.qsize()}")
+
+        # We only run a few batches to test and verify, to not time out
+        if batch_idx > 0:
+             break
+
+    await writer.stop()
 
     total_elapsed = time.perf_counter() - start
+    stats = writer.stats()
     print(f"\nDONE: {total_completed} matches in {total_elapsed:.1f}s "
           f"= {total_completed/total_elapsed*60:.0f}/min")
+    print(f"Stats: {stats}")
+
+def run_jax_batch_pipeline():
+    """
+    Synchronous entry point for the HPC JAX batch pipeline.
+
+    Returns:
+        None
+    """
+    asyncio.run(run_jax_batch_pipeline_async())
 
 if __name__ == "__main__":
-    # run_jax_batch_pipeline()
-    pass
+    run_jax_batch_pipeline()

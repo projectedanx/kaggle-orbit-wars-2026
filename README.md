@@ -1,6 +1,33 @@
 # kaggle-orbit-wars-2026
 kaggle-orbit-wars-2026
 
+## New Developer Setup and Usage Guide
+
+Welcome to the `kaggle-orbit-wars-2026` repository. This project serves as a sophisticated, non-Euclidean execution manifold for competitive Kaggle AI generation, focusing on high-performance simulation and bounded-ignorance agent architecture.
+
+### Environment Setup
+1. **Python Environment**: Ensure you are using Python 3.12+.
+2. **Core Dependencies**: Install the required scientific computation and testing suites:
+   ```bash
+   pip install jax jaxlib numpy orjson aiofiles ray kaggle-environments pytest
+   ```
+3. **Validating the Golden Scar Protocol**: This repository requires all system constraints and Epistemic Escrow logic to remain physically intact. Verify the system state via the topological testing suite:
+   ```bash
+   PYTHONPATH=. pytest tests/ test_epistemic_escrow.py test_phronesis_guard.py
+   ```
+
+### High-Performance JAX Simulation
+To generate large-scale replays quickly using Stigmergic I/O Extrusion, execute the HPC JAX pipeline:
+```bash
+python orbit_hpc_jax_runner.py
+```
+This operates on deterministic batched tensors rather than standard single-thread execution, writing directly to the `replays/` directory using an asynchronous I/O extrusion pipeline.
+
+### The Agentic Pipeline
+The default tactical agent, **AURELIUS-KINETIC-8** (`orbit_agent_manifest.py`), does not blindly attack. It operates under a strict Mereological Mandate. If certainty (source provenance) drops below 0.70, it will not guess. Instead, it triggers a **Topological Forward Escrow**, routing kinetic mass to the nearest friendly node to create a non-Euclidean defense structure.
+
+---
+
 ## High-Performance Computation Updates (AURELIUS-KINETIC-8)
 
 To support thermodynamic efficiency and large-scale replay generation (~10,000 matches/minute), this repository has been updated with:
