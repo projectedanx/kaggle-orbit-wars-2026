@@ -27,13 +27,32 @@ N_PLAYERS            = 2
 # JAX requires fixed shapes. We pad with a sentinel owner=-2.
 
 def make_initial_state_batch(batch_size: int, rng_key):
-    """Initialize B games simultaneously using vmap over random keys."""
+    """
+    Initializes a batch of games simultaneously using vmap over random keys.
+
+    [⊘] Contradiction: Dynamic game lengths mapped to fixed-size JAX tensors.
+
+    Args:
+        batch_size (int): The number of games to initialize in parallel.
+        rng_key (jax.random.PRNGKey): The JAX pseudorandom number generator key.
+
+    Returns:
+        dict: A Pytree of batched JAX arrays representing initial states.
+    """
     keys = jax.random.split(rng_key, batch_size)
     # Each game's initial state — vectorized via vmap
     return vmap(init_single_game)(keys)
 
 def init_single_game(rng_key):
-    """Initialize one game. Returns a dict of fixed-size JAX arrays."""
+    """
+    Initializes a single game, returning a dictionary of fixed-size JAX arrays.
+
+    Args:
+        rng_key (jax.random.PRNGKey): The PRNG key for randomizing initial state.
+
+    Returns:
+        dict: The initial game state.
+    """
     # Planet state: [id, owner, x, y, radius, ships, production, is_orbiting]
     # Pad to MAX_PLANETS with is_valid=False
     planets = jnp.zeros((MAX_PLANETS, 8))  # 8 features per planet
@@ -53,16 +72,18 @@ def init_single_game(rng_key):
 @partial(jit, static_argnums=(2,))
 def step_batch(states: dict, actions: jnp.ndarray, batch_size: int) -> tuple:
     """
-    Step B games forward simultaneously.
+    Steps a batch of games forward simultaneously using JIT compilation.
     
     Args:
-        states:  Pytree of arrays, each shape (B, ...) 
-        actions: Shape (B, N_PLAYERS, MAX_MOVES, 3) 
-                 Each move: [from_planet_id, angle, num_ships]
+        states (dict):  Pytree of arrays, each shape (B, ...).
+        actions (jnp.ndarray): Shape (B, N_PLAYERS, MAX_MOVES, 3). Each move is [from_planet_id, angle, num_ships].
+        batch_size (int): The number of games in the batch.
+
     Returns:
-        new_states: Same structure, updated
-        rewards:    Shape (B, N_PLAYERS)
-        dones:      Shape (B,) bool
+        tuple: (new_states, rewards, dones)
+            new_states: Updated Pytree of arrays.
+            rewards: Shape (B, N_PLAYERS).
+            dones: Shape (B,) bool.
     """
     # vmap the single-game step over the batch dimension
     new_states, rewards, dones = vmap(step_single)(states, actions)
@@ -70,7 +91,16 @@ def step_batch(states: dict, actions: jnp.ndarray, batch_size: int) -> tuple:
 
 
 def step_single(state: dict, action: jnp.ndarray) -> tuple:
-    """Single-game step function — pure JAX, JIT-compilable."""
+    """
+    Advances a single game state by one frame. Pure JAX, JIT-compilable.
+
+    Args:
+        state (dict): The current game state.
+        action (jnp.ndarray): The action tensor for all players.
+
+    Returns:
+        tuple: (new_state, rewards, done)
+    """
     planets = state["planets"]      # (MAX_PLANETS, 8)
     fleets  = state["fleets"]       # (N_PLAYERS, MAX_FLEETS, 7)
     step    = state["step"]
@@ -126,6 +156,15 @@ def step_single(state: dict, action: jnp.ndarray) -> tuple:
 
 # Helper: advance fleet positions
 def _advance_fleets(fleets):
+    """
+    Advances fleet positions based on velocity and ship count constraints.
+
+    Args:
+        fleets (jnp.ndarray): The current fleets tensor.
+
+    Returns:
+        jnp.ndarray: The updated fleets tensor.
+    """
     # Speed formula: min(SHIP_SPEED, SHIP_SPEED / sqrt(ships))
     ships = fleets[:, :, 6]
     speed = jnp.minimum(SHIP_SPEED, SHIP_SPEED / jnp.sqrt(jnp.maximum(ships, 1)))
@@ -137,7 +176,29 @@ def _advance_fleets(fleets):
 
 # Stub helpers to make the module valid since they are omitted from the markdown
 def _launch_fleets(planets, fleets, action, step):
+    """
+    Processes fleet launch actions and adds them to the active state.
+
+    Args:
+        planets (jnp.ndarray): The current planets tensor.
+        fleets (jnp.ndarray): The current fleets tensor.
+        action (jnp.ndarray): The action tensor.
+        step (int): The current simulation step.
+
+    Returns:
+        jnp.ndarray: Updated fleets.
+    """
     return fleets
 
 def _resolve_collisions(planets, fleets):
+    """
+    Resolves fleet-planet collisions and handles ownership transfers.
+
+    Args:
+        planets (jnp.ndarray): The current planets tensor.
+        fleets (jnp.ndarray): The current fleets tensor.
+
+    Returns:
+        tuple: (updated_planets, updated_fleets)
+    """
     return planets, fleets

@@ -18,6 +18,12 @@ MUTATION_RATE = 0.15
 # 4. production_weight: How much we prioritize high-production targets
 
 def create_random_genome():
+    """
+    Generates a randomized continuous parameter genome for heuristic initialization.
+
+    Returns:
+        dict: A dictionary of randomized hyperparameters (min_ship_threshold, defense_buffer, etc.).
+    """
     return {
         "min_ship_threshold": random.uniform(5.0, 50.0),
         "defense_buffer": random.uniform(0.0, 10.0),
@@ -26,6 +32,15 @@ def create_random_genome():
     }
 
 def mutate(genome):
+    """
+    Applies Gaussian mutation to a given genome enforcing strict structural boundaries.
+
+    Args:
+        genome (dict): The active parameter dictionary for an agent.
+
+    Returns:
+        dict: A newly mutated genome dictionary.
+    """
     new_genome = genome.copy()
     if random.random() < MUTATION_RATE:
         new_genome["min_ship_threshold"] += random.uniform(-5.0, 5.0)
@@ -44,6 +59,16 @@ def mutate(genome):
     return new_genome
 
 def crossover(g1, g2):
+    """
+    Performs uniform crossover between two genomes to synthesize a child state.
+
+    Args:
+        g1 (dict): Parent 1 genome.
+        g2 (dict): Parent 2 genome.
+
+    Returns:
+        dict: The hybridized child genome.
+    """
     return {
         "min_ship_threshold": random.choice([g1, g2])["min_ship_threshold"],
         "defense_buffer": random.choice([g1, g2])["defense_buffer"],
@@ -52,6 +77,17 @@ def crossover(g1, g2):
     }
 
 def fitness_function(genome):
+    """
+    Evaluates genome fitness based on a topological proxy of optimal mass distribution.
+
+    [OMISSION: Accurate JAX headless integration is deferred, mock proxy utilized.]
+
+    Args:
+        genome (dict): The target genome to score.
+
+    Returns:
+        float: The fitness score (higher is better).
+    """
     # TODO: Hook this into a headless Kaggle environment simulator
     # For now, we simulate a topological proxy:
     # A bot is "fitter" if it efficiently balances travel time with production capture
@@ -68,6 +104,12 @@ def fitness_function(genome):
     return score
 
 def run_evolution():
+    """
+    Executes the main phylogenetic evolutionary loop, fossilizing the optimal genome to disk.
+
+    Returns:
+        None
+    """
     print(f"Initializing Swarm: {POPULATION_SIZE} agents, {GENERATIONS} generations...")
     population = [create_random_genome() for _ in range(POPULATION_SIZE)]
     
