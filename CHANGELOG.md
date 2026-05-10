@@ -40,17 +40,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **KIRA-7 JUR Escalation Gateway:** Implemented asynchronous human-in-the-loop fallback via Feishu/Lark Adaptive Message Cards (`kira7_jur_gateway.py`).
+- Added `kira7_emergence_strategy` directory containing `PLAN.md` and `CHECKLIST.md` for zero-trust webhook operations.
+- Added Architecture Decision Record `docs/adr/005-kira7-jur-escalation-gateway.md`.
+
+
+### Added
 - Unified Meta-Prompting API (`aurelius_meta_api.py`) featuring `PhantomDimensionOperator`, `PlausibilityOracle`, `ProvenanceTracker`, and `HyperSpectralRenderer`.
 - TDD framework integration for the API via `tests/test_aurelius_meta_api.py`.
 - Architecture Decision Record `docs/adr/003-aurelius-meta-prompting-api.md`.
 
 ## [Unreleased]
+
 ### Added
 - **Epistemic Escrow Inversion:** Implemented an `evaluate_provenance` metric in `orbit_agent_manifest.py`. When Source Provenance Ratio < 0.70, it routes mass to the Topological Forward Node according to the Golden Scar Protocol ($\Phi=1.618$).
 - Architecture deliverables for the inversion mechanism: ADR 004, C4 Model Blueprint, DDD Context Map YAML, and semantic draft.
 - Root test `test_epistemic_escrow.py` to ensure TDD compliance.
 
 ## [Unreleased]
+
 ### Added
 - `SymbolicScarRegistry` (SSR) implementation in `symbolic_scar_registry.py` to enforce Deterministic Bounded Ignorance.
 - `EpistemicEscrowException` to handle states of high uncertainty (CFDI > 0.15).
