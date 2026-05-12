@@ -65,3 +65,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDD validation tests in `tests/test_symbolic_scar_registry.py`.
 - Strategy documentation in `vulcan_emergence_strategy/PLAN.md` and `vulcan_emergence_strategy/CHECKLIST.md`.
 - System architecture ADR (`0001-symbolic-scar-registry.md`) and C4/DDD models in `docs/architecture/`.
+
+### Added
+- **CIPHER Zero-Trust Epistemic Sentinel** (`cipher_emergence_strategy/`):
+  - `cipher_core.py`: Abstracted PDL v1.0 Decorators (`ContextLock`, `DCCDSchemaGuard`, `AutonymicIsolate`).
+  - `cipher_petzold_loop.py`: Enforces the 4-phase Immune-Aware Petzold Sequence (THINK -> THREAT_MODEL -> AUDIT -> REPORT), physically blocking syntax generation until structural linguistic scaffolds are verified.
+  - `cipher_deception_lens.py`: Implements obfuscation scoring to catch alignment faking and deceptive patterns.
+  - Integration with `symbolic_scar_registry.py` to trigger Epistemic Escrow on high CFDI (>0.15), holding contradictions in superposition via the Golden Scar Protocol ($\Phi=1.618$).
